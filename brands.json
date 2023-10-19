@@ -1,0 +1,38 @@
+[
+    {
+        "_id": 1,
+        "brandName": "CHEVROLET",
+        "imageUrl": "https://i.ibb.co/9v9rt9L/Chevrolet-logo.png",
+        "description": "A renowned American automotive brand known for its diverse lineup of cars and trucks."
+    },
+    {
+        "_id": 2,
+        "brandName": "MERCEDES BENZ",
+        "imageUrl": "https://i.ibb.co/5BCvjrY/Mercedes-Benz-Logo.png",
+        "description": "A luxury German automobile manufacturer famous for its stylish and high-performance vehicles."
+    },
+    {
+        "_id": 3,
+        "brandName": "LAMBORGHINI",
+        "imageUrl": "https://i.ibb.co/KLPhxwM/Lamborghini-logo.png",
+        "description": "An Italian sports car manufacturer celebrated for its exotic and powerful supercars."
+    },
+    {
+        "_id": 4,
+        "brandName": "BMW",
+        "imageUrl": "https://i.ibb.co/cyJkqwY/BMW-Logo.png",
+        "description": "A German automaker recognized for its premium cars, motorcycles, and innovative technology."
+    },
+    {
+        "_id": 5,
+        "brandName": "FORD",
+        "imageUrl": "https://i.ibb.co/Qnb1zrg/Ford-Logo.png",
+        "description": "An iconic American automaker known for its wide range of vehicles, including trucks and SUVs."
+    },
+    {
+        "_id": 6,
+        "brandName": "ROLLS ROYCE",
+        "imageUrl": "https://i.ibb.co/K636Ggf/Rolls-Royce-Logo.png",
+        "description": "A British luxury car manufacturer synonymous with opulence and craftsmanship in the automotive industry."
+    }
+]
