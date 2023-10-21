@@ -28,7 +28,6 @@ async function run() {
       .db("hujutoDB")
       .collection("cartProducts");
 
-
     app.post("/vehicle", async (req, res) => {
       const vehicle = req.body;
       const result = await vehicleCollection.insertOne(vehicle);
@@ -60,7 +59,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/vehicleUpdate/:id', async (req, res) => {
+    app.get("/vehicleUpdate/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await vehicleCollection.findOne(query);
@@ -83,16 +82,20 @@ async function run() {
           shortDescription: updatedVehicle.shortDescription,
         },
       };
-      const result = await vehicleCollection.updateOne(
-        query,
-        vehicle,
-        options
-      );
+      const result = await vehicleCollection.updateOne(query, vehicle, options);
+      res.send(result);
+    });
+
+    app.get("/cartProduct/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await cartProductCollection.findOne(query);
       res.send(result);
     });
 
     app.delete("/cartProduct/:id", async (req, res) => {
       const id = req.params.id;
+      console.log(id);
       const query = { _id: new ObjectId(id) };
       const result = await cartProductCollection.deleteOne(query);
       res.send(result);
