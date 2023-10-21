@@ -24,10 +24,14 @@ async function run() {
     await client.connect();
 
     const vehicleCollection = client.db("hujutoDB").collection("vehicles");
+    const cartProductCollection = client
+      .db("hujutoDB")
+      .collection("cartProducts");
+
 
     app.post("/vehicle", async (req, res) => {
-      const user = req.body;
-      const result = await vehicleCollection.insertOne(user);
+      const vehicle = req.body;
+      const result = await vehicleCollection.insertOne(vehicle);
       res.send(result);
     });
 
@@ -38,9 +42,59 @@ async function run() {
     });
 
     app.get("/vehicle/:id", async (req, res) => {
-      const id = req.params._id;
-      const query = { id: new ObjectId(id) };
-      const result = await vehicleCollection.findOne();
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await vehicleCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.post("/cartProduct", async (req, res) => {
+      const product = req.body;
+      const result = await cartProductCollection.insertOne(product);
+      res.send(result);
+    });
+
+    app.get("/cartProduct", async (req, res) => {
+      const cursor = cartProductCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.get('/vehicleUpdate/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await vehicleCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.put("/update/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedVehicle = req.body;
+      const vehicle = {
+        $set: {
+          imageUrl: updatedVehicle.imageUrl,
+          name: updatedVehicle.name,
+          brandName: updatedVehicle.brandName,
+          type: updatedVehicle.type,
+          price: updatedVehicle.price,
+          rating: updatedVehicle.rating,
+          shortDescription: updatedVehicle.shortDescription,
+        },
+      };
+      const result = await vehicleCollection.updateOne(
+        query,
+        vehicle,
+        options
+      );
+      res.send(result);
+    });
+
+    app.delete("/cartProduct/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await cartProductCollection.deleteOne(query);
       res.send(result);
     });
 
