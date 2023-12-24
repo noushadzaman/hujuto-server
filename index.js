@@ -1,4 +1,4 @@
-let brands = require("./brands.json");
+// let brands = require("./brands.json");
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
@@ -21,13 +21,14 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    //  client.connect();
+    // await client.connect();
 
     const brandCollection = client.db("hujuto").collection("brands");
     const vehicleCollection = client.db("hujuto").collection("vehicle");
     const cartProductCollection = client
       .db("hujuto")
       .collection("cartProducts");
+    const orderCollection = client.db("hujuto").collection("orders");
 
     app.get("/brand", async (req, res) => {
       const cursor = brandCollection.find();
@@ -42,16 +43,22 @@ async function run() {
       res.send(result);
     });
 
-    // app.post("/vehicle", async (req, res) => {
-    //   const vehicle = req.body;
-    //   const result = await vehicleCollection.insertOne(vehicle);
-    //   res.send(result);
-    // });
+    app.post("/vehicle", async (req, res) => {
+      const vehicle = req.body;
+      const result = await vehicleCollection.insertOne(vehicle);
+      res.send(result);
+    });
 
     app.get("/vehicle", async (req, res) => {
       let query = {};
       if (req.query.brandName) {
         query = { brandName: req.query.brandName };
+      }
+      let sortObj = {};
+      const sortField = req.query.sortField;
+      const sortOrder = req.query.sortOrder;
+      if (sortField && sortOrder) {
+        sortObj[sortField] = sortOrder;
       }
       const page = parseInt(req.query.page);
       const size = parseInt(req.query.size);
@@ -59,6 +66,7 @@ async function run() {
         .find(query)
         .skip(page * size)
         .limit(size)
+        .sort(sortObj)
         .toArray();
       res.send(result);
     });
@@ -68,9 +76,7 @@ async function run() {
       if (req.query.brandName) {
         query = { brandName: req.query.brandName };
       }
-      const result = await vehicleCollection
-        .find(query)
-        .toArray();
+      const result = await vehicleCollection.find(query).toArray();
       res.send(result);
     });
 
@@ -104,25 +110,27 @@ async function run() {
     //   res.send(result);
     // });
 
-    // app.put("/update/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const query = { _id: new ObjectId(id) };
-    //   const options = { upsert: true };
-    //   const updatedVehicle = req.body;
-    //   const vehicle = {
-    //     $set: {
-    //       imageUrl: updatedVehicle.imageUrl,
-    //       name: updatedVehicle.name,
-    //       brandName: updatedVehicle.brandName,
-    //       type: updatedVehicle.type,
-    //       price: updatedVehicle.price,
-    //       rating: updatedVehicle.rating,
-    //       shortDescription: updatedVehicle.shortDescription,
-    //     },
-    //   };
-    //   const result = await vehicleCollection.updateOne(query, vehicle, options);
-    //   res.send(result);
-    // });
+    app.patch("/update/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedVehicle = req.body;
+      const vehicle = {
+        $set: {
+          name: updatedVehicle.name,
+          brandName: updatedVehicle.brandName,
+          location: updatedVehicle.location,
+          type: updatedVehicle.type,
+          price: updatedVehicle.price,
+          rating: updatedVehicle.rating,
+          shortDescription: updatedVehicle.shortDescription,
+          imageUrls: updatedVehicle.imageUrls,
+          direction: updatedVehicle.direction,
+        },
+      };
+      const result = await vehicleCollection.updateOne(query, vehicle, options);
+      res.send(result);
+    });
 
     // app.get("/cartProduct/:id", async (req, res) => {
     //   const id = req.params.id;
@@ -135,6 +143,24 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await cartProductCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    app.get("/order", async (req, res) => {
+      const result = await orderCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.post("/order", async (req, res) => {
+      const order = req.body;
+      const result = await orderCollection.insertOne(order);
+      res.send(result);
+    });
+
+    app.post("/orderDelete/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await orderCollection.deleteOne(query);
       res.send(result);
     });
 
