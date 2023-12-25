@@ -1,13 +1,20 @@
-// let brands = require("./brands.json");
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 5000;
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
 
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173"],
+    credentials: true,
+  })
+);
 app.use(express.json());
+app.use(cookieParser());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.x4h5cla.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -19,16 +26,58 @@ const client = new MongoClient(uri, {
   },
 });
 
+const verifyToken = (req, res, next) => {
+  const token = req?.cookies?.token;
+  if (!token) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).send({ message: "unauthorized access" });
+    }
+    req.user = decoded;
+    next();
+  });
+};
+
 async function run() {
   try {
-    // await client.connect();
-
     const brandCollection = client.db("hujuto").collection("brands");
     const vehicleCollection = client.db("hujuto").collection("vehicle");
     const cartProductCollection = client
       .db("hujuto")
       .collection("cartProducts");
     const orderCollection = client.db("hujuto").collection("orders");
+    const userCollection = client.db("hujuto").collection("users");
+
+    const verifyAdmin = async (req, res, next) => {
+      const email = req?.user?.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      const isAdmin = user?.role === "admin";
+      if (!isAdmin) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      next();
+    };
+
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
+      });
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+        })
+        .send({ success: true });
+    });
+
+    app.post(`/logout`, async (req, res) => {
+      res.clearCookie("token", { maxAge: 0 }).send({ success: true });
+    });
 
     app.get("/brand", async (req, res) => {
       const cursor = brandCollection.find();
@@ -43,7 +92,23 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/vehicle", async (req, res) => {
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const result = await userCollection.insertOne(user);
+      res.send(result);
+    });
+
+    app.get("/user", async (req, res) => {
+      let query = {};
+      if (req.query.email) {
+        query = { email: req.query.email };
+      }
+      const result = await userCollection.find(query).toArray();
+      console.log(result);
+      res.send(result);
+    });
+
+    app.post("/vehicle", verifyToken, verifyAdmin, async (req, res) => {
       const vehicle = req.body;
       const result = await vehicleCollection.insertOne(vehicle);
       res.send(result);
@@ -87,13 +152,13 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/cartProduct", async (req, res) => {
+    app.post("/cartProduct", verifyToken, async (req, res) => {
       const product = req.body;
       const result = await cartProductCollection.insertOne(product);
       res.send(result);
     });
 
-    app.get("/cartProduct", async (req, res) => {
+    app.get("/cartProduct", verifyToken, async (req, res) => {
       let query = {};
       if (req.query.email) {
         query = { userEmail: req.query.email };
@@ -103,14 +168,7 @@ async function run() {
       res.send(result);
     });
 
-    // app.get("/vehicleUpdate/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const query = { _id: new ObjectId(id) };
-    //   const result = await vehicleCollection.findOne(query);
-    //   res.send(result);
-    // });
-
-    app.patch("/update/:id", async (req, res) => {
+    app.patch("/update/:id", verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const options = { upsert: true };
@@ -132,39 +190,31 @@ async function run() {
       res.send(result);
     });
 
-    // app.get("/cartProduct/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const query = { _id: new ObjectId(id) };
-    //   const result = await cartProductCollection.findOne(query);
-    //   res.send(result);
-    // });
-
-    app.delete("/cartProduct/:id", async (req, res) => {
+    app.delete("/cartProduct/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await cartProductCollection.deleteOne(query);
       res.send(result);
     });
 
-    app.get("/order", async (req, res) => {
+    app.get("/order", verifyToken, verifyAdmin, async (req, res) => {
       const result = await orderCollection.find().toArray();
       res.send(result);
     });
 
-    app.post("/order", async (req, res) => {
+    app.post("/order", verifyToken, async (req, res) => {
       const order = req.body;
       const result = await orderCollection.insertOne(order);
       res.send(result);
     });
 
-    app.post("/orderDelete/:id", async (req, res) => {
+    app.delete("/order/:id", verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await orderCollection.deleteOne(query);
       res.send(result);
     });
 
-    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
