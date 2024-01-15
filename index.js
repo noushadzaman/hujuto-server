@@ -9,7 +9,7 @@ const jwt = require("jsonwebtoken");
 
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: ["http://localhost:5173", "https://hujuto.web.app"],
     credentials: true,
   })
 );
@@ -168,7 +168,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/update/:id", verifyToken, verifyAdmin, async (req, res) => {
+    app.patch("/vehicle/:id", verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const options = { upsert: true };
@@ -190,6 +190,22 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/vehicleIncrease/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const query = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedNumber = req.body;
+      console.log(updatedNumber.orderedNumber)
+      const vehicle = {
+        $set: {
+          orderedNumber: updatedNumber.orderedNumber
+        },
+      };
+      const result = await vehicleCollection.updateOne(query, vehicle, options);
+      res.send(result);
+    });
+    
     app.delete("/cartProduct/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
